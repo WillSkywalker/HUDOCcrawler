@@ -78,16 +78,18 @@ def save_file(col, article_no):
 def download_documents(col, article_no, lang='ENG'):
     def handler(r, msg):
         print('Error!')
-        print(r.url)
         print(msg)
+        print(r.url)
+        print('Retrying...')
+        save_file(col, article_no)(requests.get(r.url))
 
     df = pandas.read_csv('Article%d_%s_%s.csv' % (article_no, col, lang))
     urls = df['url'].tolist()
-    for i in range(0, len(urls), 50):
-        reqs = (grequests.get(url, callback=save_file(col, article_no), stream=False, timeout=50) for url in urls[i:i+50])
+    for i in range(0, len(urls), 20):
+        reqs = (grequests.get(url, callback=save_file(col, article_no), stream=False, timeout=50) for url in urls[i:i+20])
         grequests.map(reqs, exception_handler=handler)
-        print('%d%% finished...' % (i/len(urls)*100))
-        time.sleep(5)
+        print('%d%% finished... (%d out of %d)' % ((i/len(urls))*100), i, len(urls))
+        time.sleep(3)
 
 
 
