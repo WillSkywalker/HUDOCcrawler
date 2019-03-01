@@ -2,13 +2,12 @@
 
 import os
 import time
+import logging
 import argparse
 import grequests
 import requests
-import grequests
 import pandas
 from urllib.parse import unquote
-from bs4 import BeautifulSoup
 
 DOC_PDF_URL = 'https://hudoc.echr.coe.int/app/conversion/pdf?library=ECHR&id=%s&filename=%s.pdf'
 LIST_WITH_ARTICLE_URL = 'https://hudoc.echr.coe.int/app/query/results?query=contentsitename:ECHR AND (NOT (doctype=PR OR doctype=HFCOMOLD OR doctype=HECOMOLD)) AND ((languageisocode="%s")) AND ((article=%d)) AND ((documentcollectionid="%s"))&select=sharepointid,Rank,ECHRRanking,itemid,docname,doctype,application,appno,conclusion,importance,originatingbody,typedescription,kpdate,extractedappno,doctypebranch,respondent&sort=&start=%d&length=%d&rankingModelId=1111111-0000-0000-0000-0000'
@@ -65,7 +64,7 @@ def get_document_list(col, article_no=None, lang='ENG'):
 def save_file(col, article_no):
     def wrapper(response, **kwargs):
         # print(response.__dict__)
-        filename = unquote(response.url.split('filename=')[-1])
+        filename = unquote(response.url.split('filename=')[-1]).replace("/", "_")
         path = 'docs/%s/%s/' % (col, article_no)
         if not os.path.exists(path):
             os.makedirs(path, exist_ok=True)
@@ -81,17 +80,23 @@ def download_documents(col, article_no, lang='ENG'):
         print(msg)
         print(r.url)
         print('Retrying...')
-        save_file(col, article_no)(requests.get(r.url))
+        try:
+            save_file(col, article_no)(requests.get(r.url))
+        except:
+            logging.warning(r.url)
+            print('Failed. File URL has been recorded in logging file.')
+
+        if os.path.exists(unquote(r.url.split('filename=')[-1])):
+            print('Successful.')
 
     df = pandas.read_csv('Article%d_%s_%s.csv' % (article_no, col, lang))
     urls = df['url'].tolist()
     for i in range(0, len(urls), 20):
-        reqs = (grequests.get(url, callback=save_file(col, article_no), stream=False, timeout=50) for url in urls[i:i+20])
+        reqs = (grequests.get(url, callback=save_file(col, article_no), stream=False, timeout=50) for url in urls[i:i+20]
+                if not os.path.exists('docs/%s/%s/%s' % (col, article_no, url.split('filename=')[-1].replace("/", "_"))))
         grequests.map(reqs, exception_handler=handler)
-        print('%d%% finished... (%d out of %d)' % ((i/len(urls))*100), i, len(urls))
+        print('%d%% finished... (%d out of %d)' % ((i/len(urls))*100, i, len(urls)))
         time.sleep(3)
-
-
 
 
 def main():
@@ -104,6 +109,7 @@ def main():
     parser.add_argument('-d', '--download', help='Download pdf documents', action='store_true')
     parser.add_argument('-u', '--update', help='Update cases', action='store_true')
     args = vars(parser.parse_args())
+    logging.basicConfig(filename='log_%d.log' % time.time(), level=logging.INFO, format='%(message)s')
 
     if args['update'] or not os.path.exists('Article%d_%s_%s.csv' % (args['article'], args['collection'], args['language'])):
         get_document_list(args['collection'], args['article'], args['language'])
