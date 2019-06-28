@@ -56,6 +56,7 @@ def update_database(article=0, lang='ENG'):
         return func
 
     dtype_dict = {'docname': mysql.TEXT(unicode=True),
+                  'url': mysql.TEXT(unicode=True),
                   'text': mysql.LONGTEXT(unicode=True),
                   'extractedappno': mysql.LONGTEXT}
 
