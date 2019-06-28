@@ -55,7 +55,7 @@ def update_database(article=0, lang='ENG'):
             return make_eng_txt(article, doctype, docname, raw_text=True)
         return func
 
-    dtype_dict = {'text': mysql.LONGTEXT, 'extractedappno': mysql.LONGTEXT}
+    dtype_dict = {'text': mysql.LONGTEXT(unicode=True), 'extractedappno': mysql.LONGTEXT}
 
     collections['text'] = list(map(get_text('COMMUNICATEDCASES'), collections['docname'].tolist()))
     collections.to_sql('%d_CommunicatedCases' % article, engine, if_exists='replace', dtype=dtype_dict)
