@@ -44,7 +44,7 @@ def make_eng_txt(article, doctype, docname, raw_text=False):
     return lines
 
 
-def update_database(col, article=0, lang='ENG'):
+def update_database(article=0, lang='ENG'):
     engine = create_engine(Config.SQLALCHEMY_DATABASE_URI, encoding='utf-8', echo=True)
     collections = pd.read_csv(os.path.join(DIRECTORY, 'Article%d_%s_%s.csv' % (article, 'COMMUNICATEDCASES', lang)))
     decisions = pd.read_csv(os.path.join(DIRECTORY, 'Article%d_%s_%s.csv' % (article, 'DECISIONS', lang)))
