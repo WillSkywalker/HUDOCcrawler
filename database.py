@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 import pdftotext
-from .config import Config
+from config import Config
 from sqlalchemy import create_engine
 from sqlalchemy.dialects import mysql
 
