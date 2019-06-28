@@ -45,7 +45,7 @@ def make_eng_txt(article, doctype, docname, raw_text=False):
 
 
 def update_database(article=0, lang='ENG'):
-    engine = create_engine(Config.SQLALCHEMY_DATABASE_URI, echo=True)
+    engine = create_engine(Config.SQLALCHEMY_DATABASE_URI, encoding='utf-8', echo=True)
     collections = pd.read_csv(os.path.join(DIRECTORY, 'Article%d_%s_%s.csv' % (article, 'COMMUNICATEDCASES', lang)))
     decisions = pd.read_csv(os.path.join(DIRECTORY, 'Article%d_%s_%s.csv' % (article, 'DECISIONS', lang)))
     judgements = pd.read_csv(os.path.join(DIRECTORY, 'Article%d_%s_%s.csv' % (article, 'JUDGMENTS', lang)))
@@ -55,7 +55,9 @@ def update_database(article=0, lang='ENG'):
             return make_eng_txt(article, doctype, docname, raw_text=True)
         return func
 
-    dtype_dict = {'text': mysql.LONGTEXT(unicode=True), 'extractedappno': mysql.LONGTEXT}
+    dtype_dict = {'docname': mysql.TEXT(unicode=True),
+                  'text': mysql.LONGTEXT(unicode=True),
+                  'extractedappno': mysql.LONGTEXT}
 
     collections['text'] = list(map(get_text('COMMUNICATEDCASES'), collections['docname'].tolist()))
     collections.to_sql('%d_CommunicatedCases' % article, engine, if_exists='replace', dtype=dtype_dict)
