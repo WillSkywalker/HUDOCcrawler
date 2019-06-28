@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 import os
 import time
@@ -78,7 +79,9 @@ def download_documents(col, article_no, lang='ENG'):
     def handler(r, msg):
         print('Error!')
         print(msg)
+        r.url = r.url.encode('utf-8')
         print(r.url)
+        #r.url = r.url.decode('utf-8')
         print('Retrying...')
         try:
             save_file(col, article_no)(requests.get(r.url))
@@ -86,14 +89,16 @@ def download_documents(col, article_no, lang='ENG'):
             logging.warning(r.url)
             print('Failed. File URL has been recorded in logging file.')
 
-        if os.path.exists(unquote(r.url.split('filename=')[-1])):
+        #r.url = r.url.decode('utf-8')
+        if os.path.exists(unquote(r.url.decode('utf-8').split('filename=')[-1])):
             print('Successful.')
 
     df = pandas.read_csv('Article%d_%s_%s.csv' % (article_no, col, lang))
     urls = df['url'].tolist()
     for i in range(0, len(urls), 20):
+        #print(urls[i].split('filename=')[-1].replace("/", "_"))
         reqs = (grequests.get(url, callback=save_file(col, article_no), stream=False, timeout=50) for url in urls[i:i+20]
-                if not os.path.exists('docs/%s/%s/%s' % (col, article_no, url.split('filename=')[-1].replace("/", "_"))))
+                if not os.path.exists('docs/%s/%s/%s' % (col, article_no, url.split('filename=')[-1].replace("/", "_").encode('utf-8'))))
         grequests.map(reqs, exception_handler=handler)
         print('%d%% finished... (%d out of %d)' % ((i/len(urls))*100, i, len(urls)))
         time.sleep(3)
